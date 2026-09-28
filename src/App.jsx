@@ -3,12 +3,18 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import Login from "./pages/Login";
-import Users from "./pages/Users";
-import Subjects from "./pages/Subjects";
+import Dashboard from "./pages/Dashboard";
 import Tests from "./pages/Tests";
 import TestRunner from "./pages/TestRunner";
+import Users from "./pages/Users";
+import Subjects from "./pages/Subjects";
 import Layout from "./components/Layout";
 import PrivateRoute from "./components/PrivateRoute";
+
+function HomeRedirect() {
+  const { role } = useAuthStore();
+  return <Navigate to={role === "admin" ? "/tests" : "/dashboard"} replace />;
+}
 
 export default function App() {
   const { init, user, loading } = useAuthStore();
@@ -33,7 +39,6 @@ export default function App() {
           element={user ? <Navigate to="/" replace /> : <Login />}
         />
 
-        {/* Всё, что ниже — только для залогиненных */}
         <Route
           element={
             <PrivateRoute>
@@ -41,7 +46,8 @@ export default function App() {
             </PrivateRoute>
           }
         >
-          <Route path="/" element={<Navigate to="/tests" replace />} />
+          <Route path="/" element={<HomeRedirect />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tests" element={<Tests />} />
           <Route path="/tests/:id" element={<TestRunner />} />
           <Route
@@ -62,7 +68,6 @@ export default function App() {
           />
         </Route>
 
-        {/* Всё неизвестное — на /tests (или /login, если не залогинен) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

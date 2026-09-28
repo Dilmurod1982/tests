@@ -4,6 +4,8 @@ import {
   collection,
   onSnapshot,
   addDoc,
+  deleteDoc,
+  doc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/config";
@@ -62,6 +64,15 @@ export default function Tests() {
     setForm({ title: "", subjectId: "", raw: "" });
   };
 
+  const removeTest = async (t) => {
+    if (!window.confirm(`«${t.title}» тести ўчирилсинми?`)) return;
+    try {
+      await deleteDoc(doc(db, "tests", t.id));
+    } catch (e) {
+      alert("Ўчиришда хатолик: " + (e.message || e));
+    }
+  };
+
   const orphanTests = tests.filter(
     (t) => !subjects.find((s) => s.id === t.subjectId)
   );
@@ -102,6 +113,8 @@ export default function Tests() {
                     <TestCard
                       key={t.id}
                       test={t}
+                      isAdmin={isAdmin}
+                      onDelete={() => removeTest(t)}
                       onClick={() => navigate(`/tests/${t.id}`)}
                     />
                   ))}
@@ -120,6 +133,8 @@ export default function Tests() {
                   <TestCard
                     key={t.id}
                     test={t}
+                    isAdmin={isAdmin}
+                    onDelete={() => removeTest(t)}
                     onClick={() => navigate(`/tests/${t.id}`)}
                   />
                 ))}
@@ -202,28 +217,42 @@ export default function Tests() {
   );
 }
 
-function TestCard({ test, onClick }) {
+function TestCard({ test, onClick, isAdmin, onDelete }) {
   return (
     <Card
       onClick={onClick}
-      className="group cursor-pointer p-4 sm:p-5 hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-0.5 active:scale-[.99] transition-all duration-200 border-slate-100 hover:border-brand-200"
+      className="group relative cursor-pointer p-4 sm:p-5 hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-0.5 active:scale-[.99] transition-all duration-200 border-slate-100 hover:border-brand-200"
     >
       <div className="flex items-start gap-3 sm:gap-4">
         <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-lg sm:rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center text-lg sm:text-xl shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
           📝
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-800 group-hover:text-brand-700 transition leading-snug line-clamp-2">
+          <h3
+            className={`font-semibold text-slate-800 group-hover:text-brand-700 transition leading-snug line-clamp-2 ${
+              isAdmin ? "pr-8" : ""
+            }`}
+          >
             {test.title}
           </h3>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
             {test.questions?.length || 0} саволлар
           </p>
         </div>
-        <span className="hidden sm:block text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition">
-          →
-        </span>
       </div>
+
+      {isAdmin && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete?.();
+          }}
+          className="absolute top-3 right-3 md:opacity-0 md:group-hover:opacity-100 w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition flex items-center justify-center text-sm"
+          title="Ўчириш"
+        >
+          🗑
+        </button>
+      )}
     </Card>
   );
 }

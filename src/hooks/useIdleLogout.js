@@ -33,7 +33,6 @@ export function useIdleLogout({ timeout = 4 * 60 * 1000, onIdle } = {}) {
     EVENTS.forEach((ev) =>
       window.addEventListener(ev, reset, { passive: true })
     );
-    // сбрасываем таймер, если юзер вернулся во вкладку
     window.addEventListener("focus", reset);
 
     return () => {

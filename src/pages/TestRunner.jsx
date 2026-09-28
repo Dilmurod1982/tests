@@ -23,6 +23,7 @@ export default function TestRunner() {
   const [prepared, setPrepared] = useState(null);
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [startedAt, setStartedAt] = useState(null);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
 
@@ -35,6 +36,7 @@ export default function TestRunner() {
 
   const start = () => {
     setPrepared(prepareTest(test.questions));
+    setStartedAt(Date.now());
     setStarted(true);
   };
 
@@ -102,6 +104,10 @@ export default function TestRunner() {
       red: "from-red-400 to-red-600",
     };
 
+    const durationSec = startedAt
+      ? Math.round((Date.now() - startedAt) / 1000)
+      : null;
+
     return (
       <div className="max-w-3xl mx-auto">
         <button
@@ -126,6 +132,12 @@ export default function TestRunner() {
           <p className="mt-3 text-sm sm:text-base text-slate-600">
             Тўғри жавоблар: <b>{rightCount}</b> / <b>{prepared.length}</b>
           </p>
+          {durationSec != null && (
+            <p className="mt-1 text-xs sm:text-sm text-slate-400">
+              Сарфланган вақт: {Math.floor(durationSec / 60)} дақ{" "}
+              {durationSec % 60} сон
+            </p>
+          )}
         </Card>
 
         <div className="space-y-3 mb-4 sm:mb-6">
@@ -171,12 +183,19 @@ export default function TestRunner() {
           ))}
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex flex-col sm:flex-row justify-center gap-2">
           <Button
+            variant="secondary"
             onClick={() => navigate("/tests")}
             className="!w-full sm:!w-auto"
           >
             ← Тестлар рўйхатига
+          </Button>
+          <Button
+            onClick={() => navigate("/dashboard")}
+            className="!w-full sm:!w-auto"
+          >
+            📊 Статистикага
           </Button>
         </div>
       </div>
@@ -210,13 +229,19 @@ export default function TestRunner() {
         const correctIdx = q.answers.findIndex((a) => a.isCorrect);
         return acc + (chosen === correctIdx ? 1 : 0);
       }, 0);
+
       await addDoc(collection(db, "attempts"), {
         userId: user?.uid || null,
         userEmail: user?.email || null,
         testId: test.id,
         testTitle: test.title,
+        subjectId: test.subjectId || null,
         total,
         rightCount,
+        percent: Math.round((rightCount / total) * 100),
+        durationSec: startedAt
+          ? Math.round((Date.now() - startedAt) / 1000)
+          : null,
         createdAt: serverTimestamp(),
       });
     } catch (e) {

@@ -15,12 +15,11 @@ export default function PrivateRoute({ children, requireAdmin = false }) {
   }
 
   if (!user) {
-    // сохраняем, куда юзер хотел попасть — чтобы после логина вернуть
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   if (requireAdmin && role !== "admin") {
-    return <Navigate to="/tests" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
