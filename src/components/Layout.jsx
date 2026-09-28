@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config";
 import { useAuthStore } from "../store/authStore";
+import { useIdleLogout } from "../hooks/useIdleLogout";
 
 const navItems = [
   { to: "/users", label: "Фойдаланувчилар", icon: "👥", short: "Юзерлар" },
@@ -14,6 +15,13 @@ export default function Layout() {
   const { user, role } = useAuthStore();
   const isAdmin = role === "admin";
   const navigate = useNavigate();
+
+  useIdleLogout({
+    timeout: 4 * 60 * 1000,
+    onIdle: () => {
+      navigate("/login", { replace: true });
+    },
+  });
 
   const handleLogout = async () => {
     await signOut(auth);
