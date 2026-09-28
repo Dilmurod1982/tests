@@ -1,9 +1,12 @@
 // src/components/Layout.jsx
+import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config";
 import { useAuthStore } from "../store/authStore";
 import { useIdleLogout } from "../hooks/useIdleLogout";
+import ProfileModal from "./ProfileModal";
+import { LogoutIcon } from "./icons";
 
 const adminNav = [
   { to: "/users", label: "Фойдаланувчилар", icon: "👥", short: "Юзерлар" },
@@ -22,8 +25,8 @@ export default function Layout() {
   const isAdmin = role === "admin";
   const navItems = isAdmin ? adminNav : userNav;
   const navigate = useNavigate();
+  const [profileOpen, setProfileOpen] = useState(false);
 
-  // Авто-выход через 4 минуты
   useIdleLogout({
     timeout: 4 * 60 * 1000,
     onIdle: () => navigate("/login", { replace: true }),
@@ -56,24 +59,32 @@ export default function Layout() {
                 {isAdmin ? "Администратор" : "Фойдаланувчи"}
               </span>
             </div>
-            <div className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm">
+
+            {/* Аватар — кликабельный, открывает профиль */}
+            <button
+              onClick={() => setProfileOpen(true)}
+              className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm hover:bg-brand-200 active:scale-95 transition"
+              aria-label="Профил"
+              title="Профил"
+            >
               {user?.email?.[0]?.toUpperCase() || "?"}
-            </div>
+            </button>
+
+            {/* Кнопка выхода с SVG-иконкой */}
             <button
               onClick={handleLogout}
-              className="text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition flex-shrink-0"
+              className="text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition flex-shrink-0 flex items-center gap-1.5"
+              aria-label="Чиқиш"
+              title="Чиқиш"
             >
+              <LogoutIcon className="w-4 h-4 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Чиқиш</span>
-              <span className="sm:hidden" aria-hidden>
-                ⏻
-              </span>
             </button>
           </div>
         </div>
       </header>
 
       <div className="flex-1 flex">
-        {/* Sidebar — md+ */}
         <aside className="w-60 hidden md:flex flex-col gap-1 p-4 bg-white border-r border-slate-200">
           {navItems.map((item) => (
             <NavLink
@@ -93,7 +104,6 @@ export default function Layout() {
           ))}
         </aside>
 
-        {/* Bottom nav — mobile */}
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 flex pb-safe">
           {navItems.map((item) => (
             <NavLink
@@ -115,6 +125,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }
