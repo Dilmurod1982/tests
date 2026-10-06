@@ -13,6 +13,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 import Modal from "../components/Modal";
+import { useTr } from "../store/langStore";
+import { useT } from "../i18n/useT";
 import { Button, Input, Label, PageHeader, Card } from "../components/ui";
 
 export default function Subjects() {
@@ -20,6 +22,8 @@ export default function Subjects() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const t = useT();
+  const tr = useTr();
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "subjects"), (snap) => {
@@ -30,7 +34,7 @@ export default function Subjects() {
 
   const create = async () => {
     if (!name.trim()) {
-      setError("Номни киритинг");
+      setError(t("nameRequired"));
       return;
     }
     await addDoc(collection(db, "subjects"), {
@@ -46,21 +50,25 @@ export default function Subjects() {
     const q = query(collection(db, "tests"), where("subjectId", "==", id));
     const snap = await getDocs(q);
     if (!snap.empty) {
-      alert(`Ўчириб бўлмайди: «${subName}» фанида ${snap.size} та тест мавжуд`);
+      alert(
+        `${t("cannotDelete")}: «${tr(subName)}» — ${snap.size} ${t(
+          "testsCount"
+        )}`
+      );
       return;
     }
-    if (!window.confirm(`«${subName}» фани ўчирилсинми?`)) return;
+    if (!window.confirm(`${tr(subName)} — ${t("confirmDelete")}`)) return;
     await deleteDoc(doc(db, "subjects", id));
   };
 
   return (
     <div>
       <PageHeader
-        title="Фанлар"
-        subtitle={`Жами: ${subjects.length}`}
+        title={t("subjectsTitle")}
+        subtitle={`${t("total")}: ${subjects.length}`}
         action={
           <Button onClick={() => setOpen(true)}>
-            <span className="text-lg leading-none">+</span> Фан яратиш
+            <span className="text-lg leading-none">+</span> {t("createSubject")}
           </Button>
         }
       />
@@ -69,7 +77,7 @@ export default function Subjects() {
         <Card className="p-10 sm:p-16 text-center">
           <div className="text-4xl sm:text-5xl mb-4">📚</div>
           <p className="text-slate-500 text-sm sm:text-base">
-            Ҳозирча фанлар мавжуд эмас. Биринчисини яратинг!
+            {t("subjectEmpty")}
           </p>
         </Card>
       ) : (
@@ -86,15 +94,17 @@ export default function Subjects() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-semibold text-slate-800 leading-tight truncate">
-                      {s.name}
+                      {tr(s.name)}
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Фан</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {t("subject")}
+                    </p>
                   </div>
                 </div>
                 <button
                   onClick={() => remove(s.id, s.name)}
                   className="md:opacity-0 md:group-hover:opacity-100 w-8 h-8 flex-shrink-0 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition flex items-center justify-center"
-                  title="Ўчириш"
+                  title={t("delete")}
                 >
                   ✕
                 </button>
@@ -104,16 +114,20 @@ export default function Subjects() {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Фан яратиш">
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={t("createSubject")}
+      >
         <div className="space-y-4">
           <div>
-            <Label>Фан номи</Label>
+            <Label>{t("subjectName")}</Label>
             <Input
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && create()}
-              placeholder="Мисол: Математика"
+              placeholder={t("subjectPlaceholder")}
             />
           </div>
           {error && (
@@ -127,10 +141,10 @@ export default function Subjects() {
               onClick={() => setOpen(false)}
               className="!w-full sm:!w-auto"
             >
-              Бекор қилиш
+              {t("cancel")}
             </Button>
             <Button onClick={create} className="!w-full sm:!w-auto">
-              Яратиш
+              {t("create")}
             </Button>
           </div>
         </div>

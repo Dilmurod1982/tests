@@ -9,17 +9,20 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuthStore } from "../store/authStore";
+import { useTr } from "../store/langStore";
+import { useT } from "../i18n/useT";
 import { Card, PageHeader, Button } from "../components/ui";
 import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const t = useT();
+  const tr = useTr();
   const [attempts, setAttempts] = useState([]);
   const [subjects, setSubjects] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Загружаем попытки юзера
   useEffect(() => {
     if (!user) return;
     const q = query(
@@ -41,7 +44,6 @@ export default function Dashboard() {
     return unsub;
   }, [user]);
 
-  // Загружаем subjects, чтобы показывать имена в слабых темах
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "subjects"), (snap) => {
       const map = {};
@@ -60,8 +62,8 @@ export default function Dashboard() {
     [attempts, subjects]
   );
   const badges = useMemo(
-    () => computeBadges(attempts, streak),
-    [attempts, streak]
+    () => computeBadges(attempts, streak, t),
+    [attempts, streak, t]
   );
 
   const recent = attempts.slice(0, 10);
@@ -69,7 +71,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32 text-slate-400">
-        Юкланмоқда...
+        {t("loading")}
       </div>
     );
   }
@@ -77,79 +79,76 @@ export default function Dashboard() {
   return (
     <div>
       <PageHeader
-        title="Статистика"
-        subtitle={`Салом, ${
-          user?.email?.split("@")[0] || ""
-        }! Сизнинг натижаларингиз`}
+        title={t("statsTitle")}
+        subtitle={`${t("greeting")}, ${user?.email?.split("@")[0] || ""}! ${t(
+          "yourResults"
+        )}`}
         action={
-          <Button onClick={() => navigate("/tests")}>📝 Тестларга ўтиш</Button>
+          <Button onClick={() => navigate("/tests")}>
+            📝 {t("goToTests")}
+          </Button>
         }
       />
 
       {attempts.length === 0 ? (
-        <EmptyState onStart={() => navigate("/tests")} />
+        <EmptyState onStart={() => navigate("/tests")} t={t} />
       ) : (
         <>
-          {/* Верхние метрики + стрик */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <StatCard
               icon="📋"
-              label="Топширилган"
+              label={t("totalAttempts")}
               value={stats.total}
-              hint="жами уриниш"
+              hint={t("totalAttemptsHint")}
               color="brand"
             />
             <StatCard
               icon="🎯"
-              label="Ўртача"
+              label={t("average")}
               value={`${stats.avg}%`}
-              hint="барча тестлар"
+              hint={t("allTests")}
               color="emerald"
             />
             <StatCard
               icon="🏆"
-              label="Энг яхши"
+              label={t("best")}
               value={`${stats.best}%`}
-              hint="энг юқори"
+              hint={t("topScore")}
               color="amber"
             />
             <StatCard
               icon="🔥"
-              label="Стрик"
-              value={`${streak.current} кун`}
+              label={t("streak")}
+              value={`${streak.current} ${t("days")}`}
               hint={
-                streak.best > 0 ? `энг узоқ: ${streak.best} кун` : "кунма-кун"
+                streak.best > 0
+                  ? `${t("bestStreak")}: ${streak.best} ${t("days")}`
+                  : t("dayByDay")
               }
               color="flame"
             />
           </div>
 
-          {/* Стрик + достижения */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
-            <StreakCard streak={streak} />
-
+            <StreakCard streak={streak} attempts={attempts} t={t} />
             <div className="lg:col-span-2">
-              <BadgesCard badges={badges} />
+              <BadgesCard badges={badges} t={t} />
             </div>
           </div>
 
-          {/* Слабые темы */}
           {weakTopics.length > 0 && (
             <div className="mb-6">
-              <WeakTopicsCard topics={weakTopics} />
+              <WeakTopicsCard topics={weakTopics} t={t} tr={tr} />
             </div>
           )}
 
-          {/* График последних попыток */}
           {recent.length > 1 && (
             <Card className="p-4 sm:p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-slate-800">
-                    Сўнгги 10 та уриниш
-                  </h3>
+                  <h3 className="font-bold text-slate-800">{t("lastTen")}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Фоиз кўринишида
+                    {t("percentView")}
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-slate-400">
@@ -160,20 +159,19 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {/* Последние попытки */}
           <Card className="overflow-hidden">
             <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800">Сўнгги натижалар</h3>
+              <h3 className="font-bold text-slate-800">{t("recentResults")}</h3>
               <button
                 onClick={() => navigate("/tests")}
                 className="text-xs sm:text-sm text-brand-600 hover:text-brand-700 font-medium"
               >
-                Барча тестлар →
+                {t("allTests")} →
               </button>
             </div>
             <ul className="divide-y divide-slate-100">
               {recent.map((a) => (
-                <AttemptRow key={a.id} attempt={a} />
+                <AttemptRow key={a.id} attempt={a} t={t} tr={tr} />
               ))}
             </ul>
           </Card>
@@ -183,7 +181,7 @@ export default function Dashboard() {
   );
 }
 
-/* ─────────── Вычисления ─────────── */
+/* ─── Утилиты ─── */
 
 function computeStats(attempts) {
   if (!attempts.length) return { total: 0, avg: 0, best: 0 };
@@ -193,63 +191,6 @@ function computeStats(attempts) {
   );
   const best = Math.max(...attempts.map((a) => a.percent ?? 0));
   return { total, avg, best };
-}
-
-/**
- * Стрик: подряд идущие дни (по локальной дате) с хотя бы одной попыткой.
- * current — серия, которая завершается сегодня или вчера (чтобы стрик не рвался
- * в течение дня, пока юзер ещё не зашёл).
- * best — лучшая серия за всё время.
- */
-function computeStreak(attempts) {
-  if (!attempts.length) return { current: 0, best: 0, lastDate: null };
-
-  const dateSet = new Set(attempts.map((a) => toLocalDateKey(a.createdAt)));
-
-  // все даты, отсортированные по возрастанию
-  const sortedDates = [...dateSet].sort();
-  if (!sortedDates.length) return { current: 0, best: 0, lastDate: null };
-
-  // best streak
-  let best = 1;
-  let run = 1;
-  for (let i = 1; i < sortedDates.length; i++) {
-    if (isNextDay(sortedDates[i - 1], sortedDates[i])) {
-      run += 1;
-      best = Math.max(best, run);
-    } else {
-      run = 1;
-    }
-  }
-
-  // current streak: считаем с сегодня назад
-  const todayKey = toLocalDateKey(new Date());
-  const yesterdayKey = toLocalDateKey(
-    new Date(Date.now() - 24 * 60 * 60 * 1000)
-  );
-
-  let current = 0;
-  let anchor;
-  if (dateSet.has(todayKey)) {
-    anchor = todayKey;
-  } else if (dateSet.has(yesterdayKey)) {
-    anchor = yesterdayKey;
-  } else {
-    return { current: 0, best, lastDate: sortedDates[sortedDates.length - 1] };
-  }
-
-  // идём назад по дням
-  let cursor = new Date(anchor);
-  while (dateSet.has(toLocalDateKey(cursor))) {
-    current += 1;
-    cursor = new Date(cursor.getTime() - 24 * 60 * 60 * 1000);
-  }
-
-  return {
-    current,
-    best: Math.max(best, current),
-    lastDate: sortedDates[sortedDates.length - 1],
-  };
 }
 
 function toLocalDateKey(input) {
@@ -264,17 +205,45 @@ function toLocalDateKey(input) {
 function isNextDay(a, b) {
   const da = new Date(a);
   const db = new Date(b);
-  const diff = (db - da) / (24 * 60 * 60 * 1000);
-  return diff === 1;
+  return (db - da) / (24 * 60 * 60 * 1000) === 1;
 }
 
-/**
- * Слабые темы: группируем попытки по subjectId, считаем средний %.
- * Возвращаем от худшего к лучшему.
- */
+function computeStreak(attempts) {
+  if (!attempts.length) return { current: 0, best: 0 };
+  const dateSet = new Set(attempts.map((a) => toLocalDateKey(a.createdAt)));
+  const sorted = [...dateSet].sort();
+  if (!sorted.length) return { current: 0, best: 0 };
+
+  let best = 1;
+  let run = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (isNextDay(sorted[i - 1], sorted[i])) {
+      run += 1;
+      best = Math.max(best, run);
+    } else run = 1;
+  }
+
+  const todayKey = toLocalDateKey(new Date());
+  const yesterdayKey = toLocalDateKey(
+    new Date(Date.now() - 24 * 60 * 60 * 1000)
+  );
+  let current = 0;
+  let anchor;
+  if (dateSet.has(todayKey)) anchor = todayKey;
+  else if (dateSet.has(yesterdayKey)) anchor = yesterdayKey;
+  else return { current: 0, best };
+
+  let cursor = new Date(anchor);
+  while (dateSet.has(toLocalDateKey(cursor))) {
+    current += 1;
+    cursor = new Date(cursor.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  return { current, best: Math.max(best, current) };
+}
+
 function computeWeakTopics(attempts, subjectsMap) {
   const bySubject = {};
-
   attempts.forEach((a) => {
     const sid = a.subjectId;
     if (!sid) return;
@@ -282,11 +251,10 @@ function computeWeakTopics(attempts, subjectsMap) {
     bySubject[sid].sum += a.percent ?? 0;
     bySubject[sid].count += 1;
   });
-
   return Object.entries(bySubject)
     .map(([sid, { sum, count }]) => ({
       subjectId: sid,
-      name: subjectsMap[sid] || "Фансиз",
+      name: subjectsMap[sid] || "—",
       avg: Math.round(sum / count),
       count,
     }))
@@ -294,10 +262,7 @@ function computeWeakTopics(attempts, subjectsMap) {
     .slice(0, 5);
 }
 
-/**
- * Достижения. Каждое — { id, icon, title, description, earned }.
- */
-function computeBadges(attempts, streak) {
+function computeBadges(attempts, streak, t) {
   const total = attempts.length;
   const best = attempts.length
     ? Math.max(...attempts.map((a) => a.percent ?? 0))
@@ -308,77 +273,77 @@ function computeBadges(attempts, streak) {
     {
       id: "first",
       icon: "🎓",
-      title: "Биринчи қадам",
-      description: "Биринчи тестни топширдингиз",
+      title: t("badgeFirst"),
+      description: t("badgeFirstDesc"),
       earned: total >= 1,
     },
     {
       id: "ten",
       icon: "📚",
-      title: "Китобхон",
-      description: "10 та тест топширилди",
+      title: t("badgeTen"),
+      description: t("badgeTenDesc"),
       earned: total >= 10,
     },
     {
       id: "fifty",
       icon: "🏅",
-      title: "Марафончи",
-      description: "50 та тест топширилди",
+      title: t("badgeFifty"),
+      description: t("badgeFiftyDesc"),
       earned: total >= 50,
     },
     {
       id: "hundred",
       icon: "💎",
-      title: "Юзлик",
-      description: "100 та тест топширилди",
+      title: t("badgeHundred"),
+      description: t("badgeHundredDesc"),
       earned: total >= 100,
     },
     {
       id: "perfect",
       icon: "⭐",
-      title: "Мукаммал",
-      description: "100% натижага эришдингиз",
+      title: t("badgePerfect"),
+      description: t("badgePerfectDesc"),
       earned: perfect >= 1,
     },
     {
       id: "perfect5",
       icon: "🌟",
-      title: "Соҳибкор",
-      description: "5 та мукаммал натижа",
+      title: t("badgePerfect5"),
+      description: t("badgePerfect5Desc"),
       earned: perfect >= 5,
     },
     {
       id: "top90",
       icon: "🎯",
-      title: "Снайпер",
-      description: "Энг яхши натижа ≥ 90%",
+      title: t("badgeTop90"),
+      description: t("badgeTop90Desc"),
       earned: best >= 90,
     },
     {
       id: "streak3",
       icon: "🔥",
-      title: "3 кунлик серия",
-      description: "3 кун кетма-кет машқ",
+      title: t("badgeStreak3"),
+      description: t("badgeStreak3Desc"),
       earned: streak.best >= 3,
     },
     {
       id: "streak7",
       icon: "🚀",
-      title: "Бир ҳафта",
-      description: "7 кун кетма-кет машқ",
+      title: t("badgeStreak7"),
+      description: t("badgeStreak7Desc"),
       earned: streak.best >= 7,
     },
     {
       id: "streak30",
       icon: "👑",
-      title: "Бир ой",
-      description: "30 кун кетма-кет машқ",
+      title: t("badgeStreak30"),
+      description: t("badgeStreak30Desc"),
       earned: streak.best >= 30,
     },
   ];
 }
 
-/* ─────────── Компоненты ─────────── */
+/* ─── Компоненты ─── */
 
 function StatCard({ icon, label, value, hint, color }) {
   const colors = {
@@ -411,23 +376,27 @@ function StatCard({ icon, label, value, hint, color }) {
   );
 }
 
-function StreakCard({ streak }) {
+function StreakCard({ streak, attempts, t }) {
   const current = streak.current;
   const best = streak.best;
-  const days = ["Ду", "Се", "Чо", "Па", "Жу", "Ша", "Як"];
+  const days = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
 
-  // считаем, в какие из последних 7 дней были попытки
+  const activeDays = new Set(
+    attempts.map((a) => toLocalDateKey(a.createdAt)).filter(Boolean)
+  );
+
   const last7 = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(d.getDate()).padStart(2, "0")}`;
     last7.push({
-      label: days[(d.getDay() + 6) % 7], // Ду=0
+      label: days[(d.getDay() + 6) % 7],
       isToday: i === 0,
-      active: false, // заполним ниже
-      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-        2,
-        "0"
-      )}-${String(d.getDate()).padStart(2, "0")}`,
+      active: activeDays.has(key),
+      key,
     });
   }
 
@@ -435,15 +404,15 @@ function StreakCard({ streak }) {
     <Card className="p-4 sm:p-5 flex flex-col">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <p className="text-xs text-slate-400 font-medium">Кунлик серия</p>
+          <p className="text-xs text-slate-400 font-medium">{t("streak")}</p>
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-3xl sm:text-4xl font-extrabold text-orange-500">
               {current}
             </span>
-            <span className="text-sm text-slate-500">кун</span>
+            <span className="text-sm text-slate-500">{t("days")}</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
-            Энг узоқ: <b>{best}</b> кун
+            {t("bestStreak")}: <b>{best}</b> {t("days")}
           </p>
         </div>
         <div
@@ -476,15 +445,15 @@ function StreakCard({ streak }) {
   );
 }
 
-function BadgesCard({ badges }) {
+function BadgesCard({ badges, t }) {
   const earned = badges.filter((b) => b.earned).length;
   return (
     <Card className="p-4 sm:p-5 h-full">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-bold text-slate-800">Достижения</h3>
+          <h3 className="font-bold text-slate-800">{t("achievements")}</h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            {earned} / {badges.length} очилди
+            {earned} / {badges.length} {t("unlocked")}
           </p>
         </div>
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 flex items-center justify-center text-2xl">
@@ -524,44 +493,42 @@ function BadgesCard({ badges }) {
   );
 }
 
-function WeakTopicsCard({ topics }) {
+function WeakTopicsCard({ topics, t, tr }) {
   const worst = topics[0];
   return (
     <Card className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 className="font-bold text-slate-800">Кучсиз мавзулар</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Ўртача натижа паст бўлган фанлар
-          </p>
+          <h3 className="font-bold text-slate-800">{t("weakTopics")}</h3>
+          <p className="text-xs text-slate-400 mt-0.5">{t("weakTopicsHint")}</p>
         </div>
         {worst && worst.avg < 60 && (
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700 whitespace-nowrap">
-            Диққат талаб
+            {t("needsAttention")}
           </span>
         )}
       </div>
 
       <ul className="space-y-3">
-        {topics.map((t) => {
-          const color = t.avg >= 80 ? "emerald" : t.avg >= 50 ? "amber" : "red";
+        {topics.map((x) => {
+          const color = x.avg >= 80 ? "emerald" : x.avg >= 50 ? "amber" : "red";
           const barColors = {
             emerald: "from-emerald-400 to-emerald-600",
             amber: "from-amber-400 to-amber-600",
             red: "from-red-400 to-red-600",
           };
           return (
-            <li key={t.subjectId}>
+            <li key={x.subjectId}>
               <div className="flex items-center justify-between gap-3 mb-1.5">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-lg">📚</span>
                   <span className="text-sm font-medium text-slate-700 truncate">
-                    {t.name}
+                    {tr(x.name)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-[11px] text-slate-400">
-                    {t.count} та
+                    {x.count} {t("attemptsShort")}
                   </span>
                   <span
                     className={`text-sm font-bold ${
@@ -572,14 +539,14 @@ function WeakTopicsCard({ topics }) {
                         : "text-red-600"
                     }`}
                   >
-                    {t.avg}%
+                    {x.avg}%
                   </span>
                 </div>
               </div>
               <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className={`h-full bg-gradient-to-r ${barColors[color]} transition-all duration-500`}
-                  style={{ width: `${t.avg}%` }}
+                  style={{ width: `${x.avg}%` }}
                 />
               </div>
             </li>
@@ -623,7 +590,7 @@ function ProgressChart({ data }) {
   );
 }
 
-function AttemptRow({ attempt }) {
+function AttemptRow({ attempt, t, tr }) {
   const percent = attempt.percent ?? 0;
   const date = attempt.createdAt?.toDate?.();
   const dateStr = date
@@ -652,13 +619,13 @@ function AttemptRow({ attempt }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-slate-800 text-sm sm:text-base truncate">
-          {attempt.testTitle}
+          {tr(attempt.testTitle)}
         </p>
         <p className="text-xs text-slate-400 mt-0.5">{dateStr}</p>
       </div>
       <div className="hidden sm:block text-right text-xs text-slate-400">
         <p>
-          Тўғри:{" "}
+          {t("correct")}:{" "}
           <span className="font-semibold text-slate-600">
             {attempt.rightCount}
           </span>{" "}
@@ -666,8 +633,8 @@ function AttemptRow({ attempt }) {
         </p>
         {attempt.durationSec ? (
           <p className="mt-0.5">
-            Вақт: {Math.floor(attempt.durationSec / 60)} дақ{" "}
-            {attempt.durationSec % 60} сон
+            {t("time")}: {Math.floor(attempt.durationSec / 60)} {t("min")}{" "}
+            {attempt.durationSec % 60} {t("sec")}
           </p>
         ) : null}
       </div>
@@ -675,18 +642,17 @@ function AttemptRow({ attempt }) {
   );
 }
 
-function EmptyState({ onStart }) {
+function EmptyState({ onStart, t }) {
   return (
     <Card className="p-10 sm:p-16 text-center">
       <div className="text-5xl sm:text-6xl mb-4">📊</div>
       <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-2">
-        Ҳозирча натижалар йўқ
+        {t("noResultsYet")}
       </h3>
       <p className="text-slate-500 text-sm sm:text-base mb-6 max-w-md mx-auto">
-        Биринчи тестни топширинг — натижаларингиз, стрик ва ютуқларингиз шу ерда
-        пайдо бўлади.
+        {t("firstTestHint")}
       </p>
-      <Button onClick={onStart}>📝 Тестларни бошлаш</Button>
+      <Button onClick={onStart}>📝 {t("startTests")}</Button>
     </Card>
   );
 }

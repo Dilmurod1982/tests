@@ -6,10 +6,12 @@ import {
   updatePassword,
 } from "firebase/auth";
 import { auth } from "../firebase/config";
+import { useT } from "../i18n/useT";
 import Modal from "./Modal";
 import { Button, Input, Label } from "./ui";
 
 export default function ChangePasswordModal({ open, onClose }) {
+  const t = useT();
   const [form, setForm] = useState({
     current: "",
     next: "",
@@ -35,64 +37,56 @@ export default function ChangePasswordModal({ open, onClose }) {
     setSuccess(false);
 
     if (!form.current || !form.next || !form.confirm) {
-      setError("Барча майдонларни тўлдиринг");
+      setError(t("fillAllFields"));
       return;
     }
     if (form.next.length < 6) {
-      setError("Янги парол камида 6 та белгидан иборат бўлиши керак");
+      setError(t("passwordTooShort"));
       return;
     }
     if (form.next !== form.confirm) {
-      setError("Янги парол ва тасдиқ бир хил эмас");
+      setError(t("passwordsDontMatch"));
       return;
     }
     if (form.next === form.current) {
-      setError("Янги парол эскисидан фарқли бўлиши керак");
+      setError(t("newPasswordMustDiffer"));
       return;
     }
 
     const u = auth.currentUser;
     if (!u || !u.email) {
-      setError("Фойдаланувчи топилмади");
+      setError(t("userNotFound"));
       return;
     }
 
     try {
       setLoading(true);
-      // 1) Переаутентификация — Firebase требует свежий вход для updatePassword
       const cred = EmailAuthProvider.credential(u.email, form.current);
       await reauthenticateWithCredential(u, cred);
-
-      // 2) Обновляем пароль
       await updatePassword(u, form.next);
 
       setSuccess(true);
       setForm({ current: "", next: "", confirm: "" });
-      // через 1.5 сек закрываем
-      setTimeout(() => {
-        close();
-      }, 1500);
+      setTimeout(close, 1500);
     } catch (err) {
       const map = {
-        "auth/wrong-password": "Жорий парол нотўғри",
-        "auth/invalid-credential": "Жорий парол нотўғри",
-        "auth/weak-password": "Янги парол жуда оддий",
-        "auth/requires-recent-login":
-          "Илтимос, қайта киринг ва яна уриниб кўринг",
-        "auth/too-many-requests":
-          "Жуда кўп уриниш. Кейинроқ қайта уриниб кўринг",
+        "auth/wrong-password": t("currentPasswordWrong"),
+        "auth/invalid-credential": t("currentPasswordWrong"),
+        "auth/weak-password": t("weakPassword"),
+        "auth/requires-recent-login": t("requiresRecentLogin"),
+        "auth/too-many-requests": t("tooManyRequests"),
       };
-      setError(map[err.code] || err.message || "Хатолик юз берди");
+      setError(map[err.code] || err.message || t("errorOccurred"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal open={open} onClose={close} title="Паролни ўзгартириш">
+    <Modal open={open} onClose={close} title={t("changePassword")}>
       <div className="space-y-4">
         <div>
-          <Label>Жорий парол</Label>
+          <Label>{t("currentPassword")}</Label>
           <Input
             type="password"
             autoFocus
@@ -103,17 +97,17 @@ export default function ChangePasswordModal({ open, onClose }) {
         </div>
 
         <div>
-          <Label>Янги парол</Label>
+          <Label>{t("newPassword")}</Label>
           <Input
             type="password"
             value={form.next}
             onChange={(e) => setForm({ ...form, next: e.target.value })}
-            placeholder="камида 6 та белги"
+            placeholder={t("passwordHint")}
           />
         </div>
 
         <div>
-          <Label>Янги паролни тасдиқлаш</Label>
+          <Label>{t("confirmPassword")}</Label>
           <Input
             type="password"
             value={form.confirm}
@@ -131,7 +125,7 @@ export default function ChangePasswordModal({ open, onClose }) {
 
         {success && (
           <div className="rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm px-4 py-2.5">
-            ✓ Парол муваффақиятли ўзгартирилди
+            ✓ {t("passwordChanged")}
           </div>
         )}
 
@@ -142,14 +136,14 @@ export default function ChangePasswordModal({ open, onClose }) {
             className="!w-full sm:!w-auto"
             disabled={loading}
           >
-            Бекор қилиш
+            {t("cancel")}
           </Button>
           <Button
             onClick={submit}
             disabled={loading || success}
             className="!w-full sm:!w-auto"
           >
-            {loading ? "Ўзгартирилмоқда..." : "Ўзгартириш"}
+            {loading ? t("changing") : t("change")}
           </Button>
         </div>
       </div>

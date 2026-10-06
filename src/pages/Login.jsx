@@ -3,9 +3,11 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/config";
 import { useNavigate } from "react-router-dom";
+import { useT } from "../i18n/useT";
 import { Button, Input, Label } from "../components/ui";
 
 export default function Login() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,14 +23,13 @@ export default function Login() {
       navigate("/");
     } catch (err) {
       const map = {
-        "auth/invalid-email": "Нотўғри email",
-        "auth/user-not-found": "Фойдаланувчи топилмади",
-        "auth/wrong-password": "Парол нотўғри",
-        "auth/invalid-credential": "Email ёки парол нотўғри",
-        "auth/too-many-requests":
-          "Жуда кўп уриниш. Кейинроқ қайта уриниб кўринг",
+        "auth/invalid-email": t("errInvalidEmail"),
+        "auth/user-not-found": t("errUserNotFound"),
+        "auth/wrong-password": t("errWrongPassword"),
+        "auth/invalid-credential": t("errInvalidCredential"),
+        "auth/too-many-requests": t("errTooManyRequests"),
       };
-      setError(map[err.code] || err.message || "Киришда хатолик");
+      setError(map[err.code] || err.message || t("errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -36,7 +37,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-slate-50 to-slate-100 p-3 sm:p-4 relative overflow-hidden">
-      {/* Декоративные блобы */}
       <div className="absolute -top-32 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-brand-200/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-72 sm:w-96 h-72 sm:h-96 bg-blue-200/40 rounded-full blur-3xl pointer-events-none" />
 
@@ -49,9 +49,9 @@ export default function Login() {
             T
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-            Хуш келибсиз
+            {t("welcome")}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">TestApp киринг</p>
+          <p className="text-slate-500 text-sm mt-1">{t("loginToApp")}</p>
         </div>
 
         <div className="space-y-4">
@@ -68,7 +68,7 @@ export default function Login() {
           </div>
 
           <div>
-            <Label htmlFor="password">Парол</Label>
+            <Label htmlFor="password">{t("password")}</Label>
             <Input
               id="password"
               type="password"
@@ -89,7 +89,7 @@ export default function Login() {
             disabled={loading}
             className="w-full py-3 text-base"
           >
-            {loading ? "Кирилмоқда..." : "Кириш"}
+            {loading ? t("loggingIn") : t("login")}
           </Button>
 
           <div className="flex items-center gap-2 pt-2">

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config";
 import { useAuthStore } from "../store/authStore";
+import { useT } from "../i18n/useT";
 import Modal from "./Modal";
 import { Button, Badge } from "./ui";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -12,6 +13,7 @@ export default function ProfileModal({ open, onClose }) {
   const { user, role } = useAuthStore();
   const isAdmin = role === "admin";
   const navigate = useNavigate();
+  const t = useT();
   const [changePassOpen, setChangePassOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -40,9 +42,8 @@ export default function ProfileModal({ open, onClose }) {
 
   return (
     <>
-      <Modal open={open} onClose={onClose} title="Профил">
+      <Modal open={open} onClose={onClose} title={t("profile")}>
         <div className="space-y-5">
-          {/* Шапка профиля */}
           <div className="flex flex-col items-center text-center">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-brand-500/30 mb-3">
               {user?.email?.[0]?.toUpperCase() || "?"}
@@ -52,18 +53,17 @@ export default function ProfileModal({ open, onClose }) {
             </p>
             <div className="mt-2">
               {isAdmin ? (
-                <Badge color="brand">Администратор</Badge>
+                <Badge color="brand">{t("admin")}</Badge>
               ) : (
-                <Badge color="slate">Фойдаланувчи</Badge>
+                <Badge color="slate">{t("user")}</Badge>
               )}
             </div>
           </div>
 
-          {/* Данные */}
           <div className="rounded-2xl bg-slate-50 divide-y divide-slate-100">
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="text-xs sm:text-sm text-slate-500">
-                Рўйхатдан ўтган
+                {t("joined")}
               </span>
               <span className="text-xs sm:text-sm font-medium text-slate-700 text-right">
                 {joined}
@@ -71,7 +71,7 @@ export default function ProfileModal({ open, onClose }) {
             </div>
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="text-xs sm:text-sm text-slate-500">
-                Сўнгги кириш
+                {t("lastSignIn")}
               </span>
               <span className="text-xs sm:text-sm font-medium text-slate-700 text-right">
                 {lastSignIn}
@@ -79,17 +79,16 @@ export default function ProfileModal({ open, onClose }) {
             </div>
           </div>
 
-          {/* Действия */}
           <div className="space-y-2">
             <Button onClick={() => setChangePassOpen(true)} className="!w-full">
-              🔒 Паролни ўзгартириш
+              🔒 {t("changePassword")}
             </Button>
             <Button
               variant="secondary"
               onClick={handleLogout}
               className="!w-full !text-red-600 !border-red-200 hover:!bg-red-50"
             >
-              Чиқиш
+              {t("logout")}
             </Button>
           </div>
         </div>

@@ -10,26 +10,27 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { prepareTest } from "../utils/parseTests";
+import { exportTestToExcel } from "../utils/exportToExcel";
 import Modal from "../components/Modal";
 import { useAuthStore } from "../store/authStore";
+import { useTr } from "../store/langStore";
+import { useT } from "../i18n/useT";
 import { Button, Card } from "../components/ui";
 
 export default function TestRunner() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const t = useT();
+  const tr = useTr();
 
   const [test, setTest] = useState(null);
   const [prepared, setPrepared] = useState(null);
-
-  // Шаги: null → "start" → "mode" → "running" → "finished"
-  const [step, setStep] = useState("start");
-  const [mode, setMode] = useState(null); // "learn" | "exam"
-
+  const [step, setStep] = useState("start"); // start | mode | running | finished
+  const [mode, setMode] = useState(null); // learn | exam
   const [startedAt, setStartedAt] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(null); // сек
+  const [timeLeft, setTimeLeft] = useState(null);
   const timerRef = useRef(null);
-
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
 
@@ -40,7 +41,6 @@ export default function TestRunner() {
     })();
   }, [id]);
 
-  // Первый шаг: подготовить тест и открыть окно выбора режима
   const goToModeChoice = () => {
     setPrepared(prepareTest(test.questions));
     setStep("mode");
@@ -50,26 +50,19 @@ export default function TestRunner() {
     setMode(chosenMode);
     setStartedAt(Date.now());
     setStep("running");
-
-    if (chosenMode === "exam") {
-      setTimeLeft(prepared.length * 60); // 1 мин на вопрос
-    }
+    if (chosenMode === "exam") setTimeLeft(prepared.length * 60);
   };
 
-  // Таймер для режима exam
+  // Таймер для exam-режима
   useEffect(() => {
     if (step !== "running" || mode !== "exam" || timeLeft == null) return;
-
     if (timeLeft <= 0) {
-      // время вышло — авто-завершение
       finish(true);
       return;
     }
-
     timerRef.current = setTimeout(() => {
-      setTimeLeft((t) => (t == null ? null : t - 1));
+      setTimeLeft((x) => (x == null ? null : x - 1));
     }, 1000);
-
     return () => clearTimeout(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, mode, timeLeft]);
@@ -77,7 +70,7 @@ export default function TestRunner() {
   if (!test) {
     return (
       <div className="flex items-center justify-center py-32 text-slate-400">
-        Юкланмоқда...
+        {t("loading")}
       </div>
     );
   }
@@ -85,30 +78,38 @@ export default function TestRunner() {
   /* ─── Шаг 1: старт ─── */
   if (step === "start") {
     return (
-      <Modal open onClose={() => navigate(-1)} title="Тестни бошлаш?">
+      <Modal open onClose={() => navigate(-1)} title={t("startTest")}>
         <div className="space-y-5">
           <div className="rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 p-4 sm:p-5">
             <p className="text-xs sm:text-sm text-brand-700 font-medium">
-              Тест
+              {t("tests")}
             </p>
             <p className="text-base sm:text-lg font-bold text-slate-800 break-words">
-              {test.title}
+              {tr(test.title)}
             </p>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              {test.questions.length} та савол · саволлар ва жавоблар тасодифий
-              тартибда
+              {test.questions.length} {t("questionsCount")} · {t("randomOrder")}
             </p>
           </div>
+
+          {/* Кнопка Excel */}
+          <button
+            onClick={() => exportTestToExcel(test)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 transition text-sm font-medium"
+          >
+            ⬇️ {t("downloadExcel")}
+          </button>
+
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
             <Button
               variant="secondary"
               onClick={() => navigate(-1)}
               className="!w-full sm:!w-auto"
             >
-              Бекор қилиш
+              {t("cancel")}
             </Button>
             <Button onClick={goToModeChoice} className="!w-full sm:!w-auto">
-              Бошлаш
+              {t("start")}
             </Button>
           </div>
         </div>
@@ -119,28 +120,22 @@ export default function TestRunner() {
   /* ─── Шаг 2: выбор режима ─── */
   if (step === "mode") {
     return (
-      <Modal
-        open
-        onClose={() => setStep("start")}
-        title="Жавоблар кўрсатилсинми?"
-      >
+      <Modal open onClose={() => setStep("start")} title={t("showAnswers")}>
         <div className="space-y-5">
           <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 sm:p-5">
             <p className="text-xs sm:text-sm text-emerald-700 font-medium">
-              Ўқув режими
+              {t("learnMode")}
             </p>
             <p className="text-sm text-slate-700 mt-1">
-              Тўғри жавоб дарҳол яшил рангда кўрсатилади. Натижа{" "}
-              <b>статистикага қўшилмайди</b>.
+              {t("learnModeDescription")}
             </p>
           </div>
           <div className="rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 p-4 sm:p-5">
             <p className="text-xs sm:text-sm text-brand-700 font-medium">
-              Имтиҳон режими
+              {t("examMode")}
             </p>
             <p className="text-sm text-slate-700 mt-1">
-              Жавоблар яширилади. Вақт: <b>{prepared.length} дақиқа</b>. Натижа
-              статистикага қўшилади.
+              {t("examModeDescription").replace("{n}", prepared.length)}
             </p>
           </div>
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
@@ -149,13 +144,13 @@ export default function TestRunner() {
               onClick={() => startWithMode("exam")}
               className="!w-full sm:!w-auto"
             >
-              Йўқ
+              {t("no")}
             </Button>
             <Button
               onClick={() => startWithMode("learn")}
               className="!w-full sm:!w-auto !bg-emerald-500 hover:!bg-emerald-600"
             >
-              Ҳа
+              {t("yes")}
             </Button>
           </div>
         </div>
@@ -193,7 +188,7 @@ export default function TestRunner() {
           onClick={() => navigate("/tests")}
           className="text-sm text-slate-500 hover:text-slate-800 mb-4 inline-flex items-center gap-1 transition"
         >
-          ← Тестлар рўйхатига
+          ← {t("backToTests")}
         </button>
 
         <Card className="p-5 sm:p-8 mb-4 sm:mb-6 text-center">
@@ -203,24 +198,24 @@ export default function TestRunner() {
             {percent}%
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-800">
-            Тест якунланди
+            {t("testFinished")}
           </h2>
           <p className="text-sm sm:text-base text-slate-500 mt-1 break-words">
-            {test.title}
+            {tr(test.title)}
           </p>
           <p className="mt-3 text-sm sm:text-base text-slate-600">
-            Тўғри жавоблар: <b>{rightCount}</b> / <b>{prepared.length}</b>
+            {t("rightAnswers")}: <b>{rightCount}</b> / <b>{prepared.length}</b>
           </p>
           {durationSec != null && (
             <p className="mt-1 text-xs sm:text-sm text-slate-400">
-              Сарфланган вақт: {Math.floor(durationSec / 60)} дақ{" "}
-              {durationSec % 60} сон
+              {t("elapsed")}: {Math.floor(durationSec / 60)} {t("min")}{" "}
+              {durationSec % 60} {t("sec")}
             </p>
           )}
 
           {mode === "learn" && (
             <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs sm:text-sm font-medium">
-              ⚠️ Ўқув режими — бу натижа статистикага қўшилмади
+              {t("learnWarning")}
             </div>
           )}
         </Card>
@@ -243,10 +238,10 @@ export default function TestRunner() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-800 text-sm sm:text-base leading-snug">
-                    {i + 1}. {r.question}
+                    {i + 1}. {tr(r.question)}
                   </p>
                   <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
-                    Сизнинг жавобингиз:{" "}
+                    {t("yourAnswer")}:{" "}
                     <span
                       className={
                         r.isRight
@@ -254,12 +249,12 @@ export default function TestRunner() {
                           : "text-red-600"
                       }
                     >
-                      {r.chosen}
+                      {tr(r.chosen)}
                     </span>
                   </p>
                   {!r.isRight && (
                     <p className="text-xs sm:text-sm text-emerald-700 font-medium mt-0.5">
-                      Тўғри жавоб: {r.correct}
+                      {t("correctAnswer")}: {tr(r.correct)}
                     </p>
                   )}
                 </div>
@@ -274,13 +269,13 @@ export default function TestRunner() {
             onClick={() => navigate("/tests")}
             className="!w-full sm:!w-auto"
           >
-            ← Тестлар рўйхатига
+            ← {t("backToTests")}
           </Button>
           <Button
             onClick={() => navigate("/dashboard")}
             className="!w-full sm:!w-auto"
           >
-            📊 Статистикага
+            📊 {t("toDashboard")}
           </Button>
         </div>
       </div>
@@ -294,41 +289,28 @@ export default function TestRunner() {
   const q = prepared[current];
 
   const choose = (idx) => {
-    if (mode === "learn") {
-      // фиксируем ответ, но НЕ переходим автоматически, чтобы юзер увидел подсветку
-      setAnswers((prev) => ({ ...prev, [current]: idx }));
-      return;
-    }
-    // exam: как раньше — фиксируем и через 200мс идём дальше
     setAnswers((prev) => ({ ...prev, [current]: idx }));
-    if (current < total - 1) {
+    if (mode === "exam" && current < total - 1) {
       setTimeout(() => setCurrent((c) => c + 1), 200);
     }
   };
 
   async function finish(isAuto = false) {
     if (step !== "running") return;
-
     if (!isAuto) {
       const msg =
         remaining > 0
-          ? `Тестни якунлашни хоҳлайсизми? ${remaining} та савол жавобсиз қолди.`
-          : "Тестни якунлашни хоҳлайсизми?";
+          ? `${t("confirmFinish")} ${remaining} ${t("unanswered")}`
+          : t("confirmFinish");
       if (!window.confirm(msg)) return;
-    } else {
-      // авто-завершение при истечении таймера
-      // без confirm
     }
-
     setStep("finished");
-
-    // В режиме learn статистику НЕ сохраняем
     if (mode === "learn") return;
 
     try {
-      const rightCount = prepared.reduce((acc, q, i) => {
+      const rightCount = prepared.reduce((acc, qq, i) => {
         const chosen = answers[i];
-        const correctIdx = q.answers.findIndex((a) => a.isCorrect);
+        const correctIdx = qq.answers.findIndex((a) => a.isCorrect);
         return acc + (chosen === correctIdx ? 1 : 0);
       }, 0);
 
@@ -347,11 +329,10 @@ export default function TestRunner() {
         createdAt: serverTimestamp(),
       });
     } catch (e) {
-      console.warn("Уринишни сақлаб бўлмади:", e);
+      console.warn("attempt save failed:", e);
     }
   }
 
-  // Форматирование таймера mm:ss
   const formatTime = (sec) => {
     if (sec == null) return "";
     const m = Math.floor(sec / 60);
@@ -363,15 +344,15 @@ export default function TestRunner() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Юқори статистика */}
+      {/* Шапка */}
       <Card className="p-4 sm:p-5 mb-4 sm:mb-5">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-semibold">
-              Тест {mode === "learn" && "· Ўқув режими"}
+              {t("tests")} {mode === "learn" && `· ${t("learnMode")}`}
             </p>
             <p className="font-semibold text-slate-800 text-sm sm:text-base break-words">
-              {test.title}
+              {tr(test.title)}
             </p>
           </div>
 
@@ -389,19 +370,25 @@ export default function TestRunner() {
             )}
             <div className="grid grid-cols-3 gap-2 sm:gap-6">
               <div className="text-center sm:text-right">
-                <p className="text-slate-400 text-[10px] sm:text-xs">Жами</p>
+                <p className="text-slate-400 text-[10px] sm:text-xs">
+                  {t("total")}
+                </p>
                 <p className="font-bold text-slate-800 text-base sm:text-lg">
                   {total}
                 </p>
               </div>
               <div className="text-center sm:text-right">
-                <p className="text-slate-400 text-[10px] sm:text-xs">Жавоб</p>
+                <p className="text-slate-400 text-[10px] sm:text-xs">
+                  {t("answered")}
+                </p>
                 <p className="font-bold text-emerald-600 text-base sm:text-lg">
                   {answeredCount}
                 </p>
               </div>
               <div className="text-center sm:text-right">
-                <p className="text-slate-400 text-[10px] sm:text-xs">Қолди</p>
+                <p className="text-slate-400 text-[10px] sm:text-xs">
+                  {t("left")}
+                </p>
                 <p className="font-bold text-amber-600 text-base sm:text-lg">
                   {remaining}
                 </p>
@@ -417,26 +404,26 @@ export default function TestRunner() {
         </div>
       </Card>
 
-      {/* Савол */}
+      {/* Вопрос */}
       <Card className="p-4 sm:p-6 md:p-8 mb-4 sm:mb-5">
         <div className="flex items-center gap-2 mb-3 sm:mb-4 flex-wrap">
           <span className="text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-brand-100 text-brand-700">
-            Савол {current + 1} / {total}
+            {t("question")} {current + 1} / {total}
           </span>
           {answers[current] != null && (
             <span className="text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-emerald-100 text-emerald-700">
-              Сиз жавоб бердингиз
+              {t("youAnswered")}
             </span>
           )}
           {mode === "learn" && (
             <span className="text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-amber-100 text-amber-700">
-              Ўқув
+              {t("learnMode")}
             </span>
           )}
         </div>
 
         <h2 className="text-base sm:text-lg md:text-xl font-semibold text-slate-900 mb-4 sm:mb-6 leading-snug">
-          {q.question}
+          {tr(q.question)}
         </h2>
 
         <ul className="space-y-2.5 sm:space-y-3">
@@ -445,28 +432,21 @@ export default function TestRunner() {
             const isCorrect = a.isCorrect;
             const showCorrect = mode === "learn" && isCorrect;
 
-            // Базовая рамка/фон
             let cls =
               "w-full text-left flex items-start gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl border-2 transition-all duration-150 active:scale-[.99] ";
 
             if (mode === "learn") {
-              if (showCorrect) {
-                // светло-зелёный фон
-                cls += "border-emerald-400 bg-emerald-50";
-              } else if (selected && !isCorrect) {
-                // выбрал неправильный — красная подсветка
+              if (showCorrect) cls += "border-emerald-400 bg-emerald-50";
+              else if (selected && !isCorrect)
                 cls += "border-red-300 bg-red-50";
-              } else {
-                cls += "border-slate-200 bg-white hover:border-slate-300";
-              }
+              else cls += "border-slate-200 bg-white hover:border-slate-300";
             } else {
-              if (selected) {
+              if (selected)
                 cls +=
                   "border-brand-500 bg-brand-50 shadow-sm shadow-brand-500/10";
-              } else {
+              else
                 cls +=
                   "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/40";
-              }
             }
 
             return (
@@ -511,7 +491,7 @@ export default function TestRunner() {
                         : "text-slate-700"
                     }`}
                   >
-                    {a.text}
+                    {tr(a.text)}
                     {showCorrect && (
                       <span className="ml-2 text-emerald-600 font-bold">✓</span>
                     )}
@@ -524,7 +504,7 @@ export default function TestRunner() {
 
         {mode === "learn" && answers[current] != null && (
           <div className="mt-4 text-xs sm:text-sm text-slate-500 italic">
-            Тўғри жавоб яшил рангда кўрсатилди. Кейинги саволга ўтинг.
+            {t("learnHint")}
           </div>
         )}
       </Card>
@@ -537,7 +517,7 @@ export default function TestRunner() {
           onClick={() => setCurrent((c) => c - 1)}
           className="!w-full sm:!w-auto"
         >
-          ← Олдинги
+          ← {t("prev")}
         </Button>
         <Button
           variant="secondary"
@@ -545,20 +525,20 @@ export default function TestRunner() {
           onClick={() => setCurrent((c) => c + 1)}
           className="!w-full sm:!w-auto"
         >
-          Кейинги →
+          {t("next")} →
         </Button>
         <Button
           onClick={() => finish(false)}
           className="!w-full sm:!w-auto !bg-emerald-500 hover:!bg-emerald-600 !shadow-emerald-500/20 col-span-2 sm:col-span-1 sm:ml-auto"
         >
-          Якунлаш
+          {t("finishTest")}
         </Button>
       </div>
 
-      {/* Саволларга ўтиш */}
+      {/* Точки */}
       <Card className="p-3 sm:p-4">
         <p className="text-[10px] sm:text-xs text-slate-400 font-semibold mb-2 sm:mb-3 uppercase tracking-wider">
-          Саволга ўтиш
+          {t("goToQuestion")}
         </p>
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {prepared.map((_, i) => {

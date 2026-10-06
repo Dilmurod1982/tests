@@ -10,6 +10,8 @@ import {
 import { db } from "../firebase/config";
 import { adminCreateUser } from "../firebase/adminCreateUser";
 import Modal from "../components/Modal";
+import { useTr } from "../store/langStore";
+import { useT } from "../i18n/useT";
 import {
   Button,
   Input,
@@ -31,6 +33,8 @@ export default function Users() {
     displayName: "",
     role: "user",
   });
+  const t = useT();
+  const tr = useTr();
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), (snap) => {
@@ -47,11 +51,11 @@ export default function Users() {
   const handleCreate = async () => {
     setError("");
     if (!form.email || !form.password || !form.displayName) {
-      setError("Барча майдонларни тўлдиринг");
+      setError(t("fillAllFields"));
       return;
     }
     if (form.password.length < 6) {
-      setError("Парол камида 6 та белгидан иборат бўлиши керак");
+      setError(t("passwordTooShort"));
       return;
     }
     try {
@@ -60,7 +64,7 @@ export default function Users() {
       setOpen(false);
       reset();
     } catch (e) {
-      setError(e.message || "Яратишда хатолик");
+      setError(e.message || t("errorOccurred"));
     } finally {
       setCreating(false);
     }
@@ -68,7 +72,7 @@ export default function Users() {
 
   const handleDelete = async (id, email) => {
     if (email === "dilik@mail.ru") return;
-    if (!window.confirm(`${email} фойдаланувчиси ўчирилсинми?`)) return;
+    if (!window.confirm(`${email} — ${t("confirmDelete")}`)) return;
     await deleteDoc(doc(db, "users", id));
   };
 
@@ -79,16 +83,16 @@ export default function Users() {
   return (
     <div>
       <PageHeader
-        title="Фойдаланувчилар"
-        subtitle={`Жами: ${users.length}`}
+        title={t("usersPageTitle")}
+        subtitle={`${t("total")}: ${users.length}`}
         action={
           <Button onClick={() => setOpen(true)}>
-            <span className="text-lg leading-none">+</span> Фойдаланувчи яратиш
+            <span className="text-lg leading-none">+</span> {t("createUser")}
           </Button>
         }
       />
 
-      {/* Мобильный список — карточки */}
+      {/* Мобильный список */}
       <div className="md:hidden space-y-3">
         {users.map((u) => (
           <Card key={u.id} className="p-4">
@@ -99,7 +103,7 @@ export default function Users() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-slate-800 truncate">{u.email}</p>
                 <p className="text-sm text-slate-500 truncate mt-0.5">
-                  {u.displayName || "—"}
+                  {tr(u.displayName) || "—"}
                 </p>
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
                   {u.email === "dilik@mail.ru" ? (
@@ -111,15 +115,15 @@ export default function Users() {
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                         className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                       >
-                        <option value="user">user</option>
-                        <option value="admin">admin</option>
+                        <option value="user">{t("roleUser")}</option>
+                        <option value="admin">{t("roleAdmin")}</option>
                       </select>
                       <Button
                         variant="danger"
                         onClick={() => handleDelete(u.id, u.email)}
                         className="!px-2.5 !py-1 !text-xs"
                       >
-                        Ўчириш
+                        {t("delete")}
                       </Button>
                     </>
                   )}
@@ -130,12 +134,12 @@ export default function Users() {
         ))}
         {users.length === 0 && (
           <Card className="p-10 text-center text-slate-400">
-            Ҳозирча фойдаланувчилар мавжуд эмас
+            {t("noUsers")}
           </Card>
         )}
       </div>
 
-      {/* Десктоп — таблица */}
+      {/* Десктоп таблица */}
       <Card className="hidden md:block overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -145,10 +149,10 @@ export default function Users() {
                   Email
                 </th>
                 <th className="text-left font-semibold text-slate-500 px-6 py-3">
-                  Исм
+                  {t("name")}
                 </th>
                 <th className="text-left font-semibold text-slate-500 px-6 py-3">
-                  Роль
+                  {t("role")}
                 </th>
                 <th className="px-6 py-3"></th>
               </tr>
@@ -170,7 +174,7 @@ export default function Users() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-slate-600">
-                    {u.displayName || "—"}
+                    {tr(u.displayName) || "—"}
                   </td>
                   <td className="px-6 py-4">
                     {u.email === "dilik@mail.ru" ? (
@@ -181,8 +185,8 @@ export default function Users() {
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                         className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                       >
-                        <option value="user">user</option>
-                        <option value="admin">admin</option>
+                        <option value="user">{t("roleUser")}</option>
+                        <option value="admin">{t("roleAdmin")}</option>
                       </select>
                     )}
                   </td>
@@ -193,7 +197,7 @@ export default function Users() {
                       onClick={() => handleDelete(u.id, u.email)}
                       className="!px-3 !py-1.5 !text-xs"
                     >
-                      Ўчириш
+                      {t("delete")}
                     </Button>
                   </td>
                 </tr>
@@ -204,7 +208,7 @@ export default function Users() {
                     colSpan={4}
                     className="px-6 py-16 text-center text-slate-400"
                   >
-                    Ҳозирча фойдаланувчилар мавжуд эмас
+                    {t("noUsers")}
                   </td>
                 </tr>
               )}
@@ -219,7 +223,7 @@ export default function Users() {
           setOpen(false);
           reset();
         }}
-        title="Фойдаланувчи яратиш"
+        title={t("createUser")}
       >
         <div className="space-y-4">
           <div>
@@ -232,32 +236,32 @@ export default function Users() {
             />
           </div>
           <div>
-            <Label>Парол</Label>
+            <Label>{t("password")}</Label>
             <Input
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="камида 6 та белги"
+              placeholder={t("passwordHint")}
             />
           </div>
           <div>
-            <Label>Кўрсатиладиган исм</Label>
+            <Label>{t("displayName")}</Label>
             <Input
               value={form.displayName}
               onChange={(e) =>
                 setForm({ ...form, displayName: e.target.value })
               }
-              placeholder="Иван Иванов"
+              placeholder="Ivan Ivanov"
             />
           </div>
           <div>
-            <Label>Роль</Label>
+            <Label>{t("role")}</Label>
             <Select
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
-              <option value="user">Фойдаланувчи</option>
-              <option value="admin">Администратор</option>
+              <option value="user">{t("roleUser")}</option>
+              <option value="admin">{t("roleAdmin")}</option>
             </Select>
           </div>
 
@@ -276,14 +280,14 @@ export default function Users() {
               }}
               className="!w-full sm:!w-auto"
             >
-              Бекор қилиш
+              {t("cancel")}
             </Button>
             <Button
               onClick={handleCreate}
               disabled={creating}
               className="!w-full sm:!w-auto"
             >
-              {creating ? "Яратилмоқда..." : "Яратиш"}
+              {creating ? t("creating") : t("create")}
             </Button>
           </div>
         </div>

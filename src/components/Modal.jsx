@@ -1,5 +1,8 @@
 // src/components/Modal.jsx
+import { useT } from "../i18n/useT";
+
 export default function Modal({ open, onClose, title, children, size = "md" }) {
+  const t = useT();
   if (!open) return null;
 
   const widths = {
@@ -18,7 +21,6 @@ export default function Modal({ open, onClose, title, children, size = "md" }) {
         className={`bg-white w-full ${widths[size]} rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-slate-900/10 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto animate-[slideUp_.2s_ease-out] pb-safe`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Drag handle — визуальная подсказка на мобильном */}
         <div className="sm:hidden pt-3 pb-1 flex justify-center">
           <div className="w-10 h-1 rounded-full bg-slate-200" />
         </div>
@@ -30,7 +32,7 @@ export default function Modal({ open, onClose, title, children, size = "md" }) {
           <button
             onClick={onClose}
             className="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-            aria-label="Ёпиш"
+            aria-label={t("close")}
           >
             ✕
           </button>
