@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tests from "./pages/Tests";
 import TestRunner from "./pages/TestRunner";
+import AllQuestions from "./pages/AllQuestions";
 import Users from "./pages/Users";
 import Subjects from "./pages/Subjects";
 import Layout from "./components/Layout";
@@ -26,7 +27,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-slate-400">
-        Юкланмоқда...
+        Yuklanmoqda...
       </div>
     );
   }
@@ -39,6 +40,7 @@ export default function App() {
           element={user ? <Navigate to="/" replace /> : <Login />}
         />
 
+        {/* Приватная зона: Layout + всё внутри */}
         <Route
           element={
             <PrivateRoute>
@@ -50,6 +52,9 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tests" element={<Tests />} />
           <Route path="/tests/:id" element={<TestRunner />} />
+          <Route path="/all-questions" element={<AllQuestions />} />
+
+          {/* Только админ */}
           <Route
             path="/users"
             element={
@@ -68,6 +73,7 @@ export default function App() {
           />
         </Route>
 
+        {/* Неизвестный путь — на / */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

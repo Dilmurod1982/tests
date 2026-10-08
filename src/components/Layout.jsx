@@ -27,6 +27,12 @@ export default function Layout() {
       : []),
     { to: "/tests", key: "tests", icon: "📝" },
     {
+      to: "/all-questions",
+      key: "allQuestions",
+      icon: "🔎",
+      shortKey: "allQuestionsShort",
+    },
+    {
       to: "/dashboard",
       key: "dashboard",
       icon: "📊",
@@ -62,10 +68,8 @@ export default function Layout() {
 
           {/* Правая часть */}
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            {/* Переключатель LAT / КИР */}
             <LangSwitch />
 
-            {/* Email + роль (только на sm+) */}
             <div className="hidden sm:flex flex-col items-end leading-tight max-w-[180px]">
               <span className="text-sm font-medium text-slate-700 truncate">
                 {user?.email}

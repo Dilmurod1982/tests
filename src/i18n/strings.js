@@ -3,11 +3,14 @@ export const STRINGS = {
     // ─── Common ───
     loading: { lat: "Yuklanmoqda...", cyr: "Юкланмоқда..." },
     total: { lat: "Jami", cyr: "Жами" },
+    shown: { lat: "koʻrsatilgan", cyr: "кўрсатилган" },
     create: { lat: "Yaratish", cyr: "Яратиш" },
     creating: { lat: "Yaratilmoqda...", cyr: "Яратилмоқда..." },
     cancel: { lat: "Bekor qilish", cyr: "Бекор қилиш" },
     delete: { lat: "Oʻchirish", cyr: "Ўчириш" },
     close: { lat: "Yopish", cyr: "Ёпиш" },
+    clear: { lat: "Tozalash", cyr: "Тозалаш" },
+    back: { lat: "Orqaga", cyr: "Орқага" },
     confirmDelete: { lat: "Oʻchirilsinmi?", cyr: "Ўчирилсинми?" },
     errorOccurred: { lat: "Xatolik yuz berdi", cyr: "Хатолик юз берди" },
     fillAllFields: {
@@ -25,6 +28,8 @@ export const STRINGS = {
     usersShort: { lat: "Foyd.", cyr: "Фойд." },
     subjects: { lat: "Fanlar", cyr: "Фанлар" },
     tests: { lat: "Testlar", cyr: "Тестлар" },
+    allQuestions: { lat: "Barcha savollar", cyr: "Барча саволлар" },
+    allQuestionsShort: { lat: "Savollar", cyr: "Саволлар" },
     dashboard: { lat: "Statistika", cyr: "Статистика" },
     dashboardShort: { lat: "Stat.", cyr: "Стат." },
   
@@ -192,6 +197,32 @@ export const STRINGS = {
       cyr: "Excel файли юклаб олинди",
     },
   
+    // ─── All questions ───
+    allQuestionsTitle: {
+      lat: "Barcha savollar",
+      cyr: "Барча саволлар",
+    },
+    pickTest: {
+      lat: "Testni tanlang",
+      cyr: "Тестни танланг",
+    },
+    allTestsCombined: {
+      lat: "Barcha testlar (birlashtirilgan)",
+      cyr: "Барча тестлар (бирлаштирилган)",
+    },
+    searchPlaceholder: {
+      lat: "Qidirish... (masalan: huquq yoki dav huquq)",
+      cyr: "Қидириш... (масалан: ҳуқуқ ёки дав ҳуқуқ)",
+    },
+    searchHint: {
+      lat: "Bir soʻz kiriting — shu soʻz bilan boshlanadigan savollar topiladi. Bir nechta soʻz kiriting (boʻsh joy bilan) — savolda har bir soʻz alohida boshlanishi kerak.",
+      cyr: "Бир сўз киритинг — шу сўз билан бошланадиган саволлар топилади. Бир нечта сўз киритинг (бўш жой билан) — саволда ҳар бир сўз алоҳида бошланиши керак.",
+    },
+    nothingFound: {
+      lat: "Hech narsa topilmadi",
+      cyr: "Ҳеч нарса топилмади",
+    },
+  
     // ─── TestRunner ───
     startTest: { lat: "Testni boshlash?", cyr: "Тестни бошлаш?" },
     start: { lat: "Boshlash", cyr: "Бошлаш" },
@@ -268,7 +299,7 @@ export const STRINGS = {
     topScore: { lat: "eng yuqori", cyr: "энг юқори" },
     streak: { lat: "Seriya", cyr: "Серия" },
     days: { lat: "kun", cyr: "кун" },
-    bestStreak: { lat: "eng uzoq", cyr: "энг узоқ" },
+    bestStreak: { lat: "eng uzoq", cyr: "энu uzоқ" },
     dayByDay: { lat: "kunma-kun", cyr: "кунма-кун" },
     lastTen: { lat: "Soʻnggi 10 ta urinish", cyr: "Сўнгги 10 та уриниш" },
     percentView: { lat: "Foiz koʻrinishida", cyr: "Фоиз кўринишида" },
